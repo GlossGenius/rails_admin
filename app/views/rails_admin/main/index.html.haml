@@ -22,20 +22,17 @@
 - content_for :contextual_tabs do
   - if checkboxes
     = bulk_menu
-  - if filterable_fields.present?
+  - if @model_config.list.scopes.any?
     %li.dropdown{style: 'float:right'}
       %a.dropdown-toggle{href: '#', :'data-toggle' => "dropdown"}
-        = t('admin.misc.add_filter')
+        = t('admin.misc.custom_filter')
+        = ': ' + params[:scope] if @model_config.list.scopes.any?(params[:scope])
         %b.caret
-      %ul.dropdown-menu#filters{style: 'left:auto; right:0;'}
-        - filterable_fields.each do |field|
-          - field_options = case field.type
-          - when :enum
-            - options_for_select(field.with(object: @abstract_model.model.new).enum)
-          - else
-            - ''
-          %li
-            %a{href: '#', :"data-field-label" => field.label, :"data-field-name" => field.name, :"data-field-options" => field_options.html_safe, :"data-field-type" => field.type, :"data-field-value" => "", :"data-field-datetimepicker-format" => (field.try(:parser) && field.parser.to_momentjs)}= capitalize_first_letter(field.label)
+      %ul.dropdown-menu#custom_filter{style: 'left:auto; right:0;'}
+        - @model_config.list.scopes.each_with_index do |scope, index|
+          - scope = '_all' if scope.nil?
+          %li{class: "#{'active' if scope.to_s == params[:scope] || (params[:scope].blank? && index == 0)}"}
+            %a{href: index_path(params.merge(scope: scope, page: nil)), class: 'pjax'}= I18n.t("admin.scopes.#{@abstract_model.to_param}.#{scope}", default: I18n.t("admin.scopes.#{scope}", default: scope.to_s))
 
 %style
   - properties.select{ |p| p.column_width.present? }.each do |property|
@@ -58,12 +55,12 @@
       - if export_action
         %span{style: 'float:right'}= link_to wording_for(:link, export_action), export_path(params.except('set').except('page')), class: 'btn btn-info'
 
-  - unless @model_config.list.scopes.empty?
-    %ul.nav.nav-tabs#scope_selector
-      - @model_config.list.scopes.each_with_index do |scope, index|
-        - scope = '_all' if scope.nil?
-        %li{class: "#{'active' if scope.to_s == params[:scope] || (params[:scope].blank? && index == 0)}"}
-          %a{href: index_path(params.merge(scope: scope, page: nil)), class: 'pjax'}= I18n.t("admin.scopes.#{@abstract_model.to_param}.#{scope}", default: I18n.t("admin.scopes.#{scope}", default: scope.to_s.titleize))
+  -# - unless @model_config.list.scopes.empty?
+  -#   %ul.nav.nav-tabs#scope_selector
+  -#     - @model_config.list.scopes.each_with_index do |scope, index|
+  -#       - scope = '_all' if scope.nil?
+  -#       %li{class: "#{'active' if scope.to_s == params[:scope] || (params[:scope].blank? && index == 0)}"}
+  -#         %a{href: index_path(params.merge(scope: scope, page: nil)), class: 'pjax'}= I18n.t("admin.scopes.#{@abstract_model.to_param}.#{scope}", default: I18n.t("admin.scopes.#{scope}", default: scope.to_s.titleize))
 
   = form_tag bulk_action_path(model_name: @abstract_model.to_param), method: :post, id: "bulk_form", class: ["form", frozen_columns ? 'ra-sidescroll' : nil], data: (frozen_columns ? {ra_sidescroll: frozen_columns} : {}) do
     = hidden_field_tag :bulk_action
