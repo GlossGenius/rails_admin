@@ -26,13 +26,13 @@
     %li.dropdown{style: 'float:right'}
       %a.dropdown-toggle{href: '#', :'data-toggle' => "dropdown"}
         = t('admin.misc.custom_filter')
-        = ': ' + params[:scope] if @model_config.list.scopes.any?(params[:scope])
+        = ': ' + params[:scope].gsub(/_\d+$/, '') if @model_config.list.scopes.any?(params[:scope])
         %b.caret
       %ul.dropdown-menu#custom_filter{style: 'left:auto; right:0;'}
         - @model_config.list.scopes.each_with_index do |scope, index|
           - scope = '_all' if scope.nil?
           %li{class: "#{'active' if scope.to_s == params[:scope] || (params[:scope].blank? && index == 0)}"}
-            %a{href: index_path(params.merge(scope: scope, page: nil)), class: 'pjax'}= I18n.t("admin.scopes.#{@abstract_model.to_param}.#{scope}", default: I18n.t("admin.scopes.#{scope}", default: scope.to_s))
+            %a{href: index_path(params.merge(scope: scope, page: nil)), class: 'pjax'}= I18n.t("admin.scopes.#{@abstract_model.to_param}.#{scope}", default: I18n.t("admin.scopes.#{scope}", default: scope.to_s.gsub(/_\d+$/, '')))
 
 %style
   - properties.select{ |p| p.column_width.present? }.each do |property|
