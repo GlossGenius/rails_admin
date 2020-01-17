@@ -77,7 +77,7 @@ module RailsAdmin
     def redirect_to_on_success
       notice = I18n.t('admin.flash.successful', name: @model_config.label, action: I18n.t("admin.actions.#{@action.key}.done"))
       if params[:_add_another]
-        redirect_to new_path(return_to: params[:return_to]), flash: {success: notice}
+        redirect_to new_path(scope: params[:scope], return_to: params[:return_to]), flash: {success: notice}
       elsif params[:_add_edit]
         redirect_to edit_path(id: @object.id, return_to: params[:return_to]), flash: {success: notice}
       else
