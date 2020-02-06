@@ -28,6 +28,27 @@ module RailsAdmin
       send(params[:bulk_action]) if params[:bulk_action].in?(RailsAdmin::Config::Actions.all(controller: self, abstract_model: @abstract_model).select(&:bulkable?).collect(&:route_fragment))
     end
 
+    def list_objects(auth_scope_key = :index)
+      main_scope = get_scope_from_params
+      additional_scope = get_association_scope_from_params
+      pagination = !(params[:associated_collection] || params[:all] || params[:bulk_ids])
+
+      scope = @model_config.abstract_model.scoped
+      if auth_scope = @authorization_adapter && @authorization_adapter.query(auth_scope_key, @model_config.abstract_model)
+        scope = scope.merge(auth_scope)
+      end
+      scope = scope.rails_admin_default if scope.respond_to?(:rails_admin_default)
+      scope = scope.instance_eval(&main_scope) if main_scope
+      scope = scope.instance_eval(&additional_scope) if additional_scope
+      get_collection(@model_config, scope, pagination)
+    end
+
+    def get_scope_from_params
+      return nil unless params[:scope].present?
+
+      params[:scope].to_sym
+    end
+
     def list_entries(model_config = @model_config, auth_scope_key = :index, additional_scope = get_association_scope_from_params, pagination = !(params[:associated_collection] || params[:all] || params[:bulk_ids]))
       scope = model_config.abstract_model.scoped
       if auth_scope = @authorization_adapter && @authorization_adapter.query(auth_scope_key, model_config.abstract_model)
@@ -35,6 +56,10 @@ module RailsAdmin
       end
       scope = scope.instance_eval(&additional_scope) if additional_scope
       get_collection(model_config, scope, pagination)
+    end
+
+    def scope_from_params
+      params[:scope].presence
     end
 
   private
